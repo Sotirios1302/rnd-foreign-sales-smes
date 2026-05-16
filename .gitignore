@@ -1,0 +1,25 @@
+# Python virtual environment
+.venv/
+
+# Raw data (do not commit to GitHub)
+data/raw/
+
+# Credentials (NEVER commit!)
+.env
+
+# References — PDFs (BibTeX file IS committed)
+references/*.pdf
+
+# Python build/cache files
+__pycache__/
+*.pyc
+
+# Logs and temp files
+*.log
+*.tex
+
+# macOS system files
+.DS_Store
+
+# VS Code workspace files (optional - personal preference)
+.vscode/
