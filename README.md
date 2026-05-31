@@ -96,12 +96,30 @@ between R&D intensity and sales growth among SMEs.
 |---|---|
 | Source | WRDS / Compustat Global |
 | Table | comp_global_daily.g_funda |
-| Filters | datafmt=HIST_STD, indfmt=INDL, popsrc=I, consol=C |
+| Pull date | 2026-05-30 |
+| Pull filters | datafmt=HIST_STD, indfmt=INDL, popsrc=I, consol=C |
+| Sample filter | Reporting currency = EUR |
 | Fiscal years | 2015–2024 |
-| Geography | All (no country filter) |
+| Raw rows pulled | 338,465 |
+| Clean panel rows | 26,090 firm-years |
+| Unique firms | 3,430 |
+| Countries | 46 (top: FRA, DEU, ITA, FIN, ESP, GRC, NLD, BEL, AUT, PRT) |
+| Total columns | 444 |
 | License | WRDS subscriber agreement |
 
-*(Row counts will be filled in after running `02_clean.py`.)*
+### Completeness of key variables (in the clean panel)
+
+| Variable | Completeness |
+|---|---|
+| `at` (Total Assets) | 99.7% |
+| `sale` (Sales) | 99.7% |
+| `xrd` (R&D Expense) | 44.5% |
+| `emp` (Employees) | 86.4% |
+| `dltt` (Long-term Debt) | 99.5% |
+| `seq` (Stockholders Equity) | 99.6% |
+| `sich` (SIC Code) | ~90% |
+
+*Note: Missing `xrd` is treated as zero (firms not reporting R&D are assumed to have no R&D activity).*
 
 ## Project Structure
 
