@@ -3,6 +3,8 @@
 
 # Raw data (do not commit to GitHub)
 data/raw/
+data/processed/
+*.parquet
 
 # Credentials (NEVER commit!)
 .env
