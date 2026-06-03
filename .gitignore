@@ -6,6 +6,9 @@ data/raw/
 data/processed/
 *.parquet
 
+# Generated outputs (do not commit to GitHub)
+output/
+   
 # Credentials (NEVER commit!)
 .env
 

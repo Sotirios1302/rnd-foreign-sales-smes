@@ -7,13 +7,22 @@
 
 ## Research Question
 
-Does higher R&D intensity drive faster revenue growth among small and
-medium-sized enterprises (SMEs)?
+Does R&D intensity affect firm performance (Return on Assets) among
+European small and medium-sized enterprises (SMEs), and does firm size
+moderate this relationship?
+
 
 ## Hypotheses
 
-- **H1:** SMEs with higher R&D intensity (R&D expenses divided by total
-  sales) exhibit higher sales growth.
+- **H1:** R&D intensity negatively affects current-period Return on Assets
+  (RoA) among SMEs. Under IFRS, R&D expenditures are largely expensed in
+  the period they are incurred, mechanically reducing current earnings
+  while benefits accrue with a lag.
+
+- **H2:** Firm size positively moderates the R&D intensity–RoA
+  relationship. Larger SMEs are better able to absorb the short-run
+  expensing cost of R&D through scale, internal financing, and economies
+  of scope, attenuating the negative effect of R&D intensity on RoA.
 
 ## Theoretical Background
 
@@ -63,32 +72,24 @@ between R&D intensity and sales growth among SMEs.
 
 ## Variables
 
-### Dependent variable (Y)
-
-| Construct | Data Item(s) | Formula | Notes |
+| Variable | Field(s) | Formula | Role |
 |---|---|---|---|
-| Sales Growth | sale | (sale_t − sale_{t-1}) / sale_{t-1} | Constructed in 02_clean.py; first year per firm is NaN; winsorized at 1%/99% |
+| RoA | `ib`, `at` | `ib / at` | Dependent (Y) |
+| R&D intensity | `xrd`, `at` | `xrd.fillna(0) / at` | Independent (X) |
+| R&D × Size | — | `rd_intensity × ln_at` | H2 interaction |
+| Firm size | `at` | `log(at)` | Moderator + control |
+| Leverage | `dltt`, `at` | `dltt / at` | Control |
+| CAPX intensity | `capx`, `at` | `capx / at` | Control |
+| Cash ratio | `che`, `at` | `che / at` | Control |
 
-### Independent variable (X)
+### Sample filters
 
-| Construct | Data Item(s) | Formula | Notes |
-|---|---|---|---|
-| R&D Intensity | xrd, sale | xrd / sale | Missing xrd treated as 0 (firm did not report R&D) |
+- Data quality: `at > 0.1`, `sale > 0`, `seq > 0`
+- Remove micro-firms: `at >= 1` (firms with ≥ €1m assets only)
+- EU SME filter: `emp < 0.25` (less than 250 employees) **OR** `at <= 43` (assets ≤ €43m)
+- Minimum 3 observations per firm (for fixed-effects estimation)
 
-### Control variables
-
-| Construct | Data Item(s) | Formula | Notes |
-|---|---|---|---|
-| Firm Size | at | log(at) | Log-transformed to reduce skewness |
-| Leverage | dltt, dlc, seq | (dltt + dlc) / seq | From WRDS Data Items sheet |
-| Firm Age (proxy) | fyear | fyear − min(fyear) per gvkey | Years since firm first appears in Compustat; INCO not available in Compustat Global |
-| Industry FE | sich | Categorical | 2-digit SIC code as fixed effect |
-
-### Sample filter
-
-| Construct | Data Item(s) | Criterion | Notes |
-|---|---|---|---|
-| SME | emp | emp < 0.25 | EU definition: fewer than 250 employees (emp in thousands) |
+Variables `roa`, `rd_intensity`, `leverage`, `capx_intensity`, `cash_ratio` are winsorized at the 1st and 99th percentile to mitigate the impact of outliers. `ln_at` is **not** winsorized (log-transformation already handles skew).
 
 ## Data
 
