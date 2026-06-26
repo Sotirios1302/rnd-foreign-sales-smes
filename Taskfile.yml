@@ -1,9 +1,5 @@
 version: '3'
 
-# Run the full pipeline:  task all
-# Run individual steps:   task pull / task clean / task descriptives / task regression
-# Lint & format:          task lint / task format
-
 tasks:
   pull:
     desc: "Download raw firm data from WRDS Compustat Global"
@@ -29,8 +25,10 @@ tasks:
       - python code/04_regression.py
 
   all:
-    desc: "Run the full pipeline end-to-end"
+    desc: "Full pipeline analysis plus PDF"
     deps: [regression]
+    cmds:
+      - quarto render research_note.qmd
 
   lint:
     desc: "Check code quality with ruff"
@@ -43,6 +41,6 @@ tasks:
       - ruff format code/
 
   render:
-    desc: "Render research_note.md to PDF via Quarto"
+    desc: "Render research_note.qmd to PDF via Quarto"
     cmds:
-      - quarto render research_note.md
+      - quarto render research_note.qmd

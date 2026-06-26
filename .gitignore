@@ -28,3 +28,7 @@ __pycache__/
 
 # VS Code workspace files (optional - personal preference)
 .vscode/
+# Generated PDF (submit via Canvas, not Git)
+research_note.pdf
+*.log
+*.tex

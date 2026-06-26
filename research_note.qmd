@@ -1,0 +1,195 @@
+---
+title: "R&D Intensity and the Performance of European SMEs: The Moderating Role of Firm Size"
+author:
+  - name: "Sotirios Ioannis Konstadinos Panousis"
+    affiliations:
+      - "ExInt II | WU Vienna | SS 2026"
+      - "https://github.com/Sotirios1302/rnd-foreign-sales-smes"
+date: "June 2026"
+bibliography: "references/Meine Bibliothek.bib"
+csl: references/apa.csl
+format:
+  pdf:
+    toc: false
+    number-sections: true
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    linestretch: 1.3
+    include-in-header:
+      text: |
+        \usepackage{etoolbox}
+execute:
+  eval: true
+  echo: false
+  warning: false
+  message: false
+---
+```{python}
+#| label: setup
+import pandas as pd
+
+summary = pd.read_csv('output/tables/summary_statistics.csv', index_col=0)
+results = pd.read_csv('output/tables/regression_results.csv', index_col=0)
+panel   = pd.read_parquet('data/processed/panel_with_vars.parquet')
+
+# Round summary table to 3 decimals for cleaner display
+summary = summary.round(3)
+
+# Replace NaN with empty strings in regression table for cleaner display
+results = results.fillna('')
+
+n_obs   = int(panel.shape[0])
+n_firms = int(panel['gvkey'].nunique())
+n_rd    = int((panel['rd_intensity'] > 0).sum())
+pct_rd  = round((panel['rd_intensity'] > 0).mean() * 100, 1)
+
+b_rd_ols   = -0.7858
+b_rd_fe    = -0.5545
+b_rdsize   = 0.0892
+p_rdsize   = 0.158
+ols_fe_diff = round(abs(b_rd_ols - b_rd_fe) / abs(b_rd_ols) * 100, 1)
+```
+# Introduction
+
+Innovation is among the most extensively theorised sources of sustainable competitive advantage. A long tradition of empirical work in strategy and economics establishes that investments in Research and Development (R&D) generate firm-specific knowledge assets — patents, tacit know-how, organisational routines — that are difficult for competitors to imitate and that underpin long-run value creation [@cohenAbsorptiveCapacityNew1990; @kafourosRoleInternationalizationExplaining2008]. Yet the long-run optimism of this innovation–performance literature sits uneasily beside a more uncomfortable short-run reality. Under International Financial Reporting Standards (IFRS), most R&D outlays must be expensed in the period in which they are incurred rather than capitalised as intangible assets. The result is a mechanical wedge between the *accounting* trajectory of an innovating firm and the *economic* trajectory of its asset base: research costs reduce reported earnings today, while the resulting revenues materialise only after a multi-year development and commercialisation lag.
+
+For small and medium-sized enterprises (SMEs), this temporal mismatch is not merely an accounting curiosity. SMEs face binding resource constraints, limited access to external finance, and structural disadvantages relative to large incumbents that make them less able to absorb a short-run earnings drag without it being visible — to lenders, to boards, to the firm itself [@booltinkEffectsRDIntensity2018]. The existing empirical literature on R&D and SME performance, however, has rarely modelled this mechanical short-run penalty separately from the underlying innovation–performance link. Studies report positive, negative, inverted-U, and null relationships across samples and specifications [@booltinkEffectsRDIntensity2018; @tangRDInternationalizationProduct2019], but the cross-sectional designs that dominate the literature confound the contemporaneous expensing effect with deeper, unobserved sources of firm heterogeneity — innovation culture, governance quality, sectoral exposure — that simultaneously shape both R&D commitment and profitability.
+
+This note addresses two gaps. First, it provides a within-firm estimate of the contemporaneous R&D–performance relationship in a European SME panel, isolating the short-run mechanical effect from time-invariant confounders that bias pooled cross-sectional estimators. Second, it tests whether firm size — a primary determinant of the resource base over which R&D costs can be spread — moderates this short-run effect. The analysis uses Compustat Global firm-year data on European EUR-reporting SMEs over fiscal years 2015–2024, two-way fixed effects estimation with firm-clustered standard errors [@petersenEstimatingStandardErrors2009], and a benchmark comparison against pooled OLS to quantify the magnitude of omitted variable bias.
+
+> **Research question:** Does R&D intensity reduce the current-period Return on Assets (RoA) of European SMEs, and is this short-run effect moderated by firm size?
+
+# Theory and Hypotheses
+
+## R&D as a Firm-Specific Resource
+
+The Resource-Based View (RBV) holds that sustained heterogeneity in firm performance derives from bundles of resources and capabilities that are valuable, rare, inimitable, and non-substitutable [@barneyFirmResourcesSustained1991]. R&D investment is canonically RBV-consistent: it produces proprietary technological knowledge, tacit routines embedded in skilled personnel, and intellectual property that competitors cannot costlessly replicate. @cohenAbsorptiveCapacityNew1990 deepen this perspective by arguing that R&D plays a dual role — it both generates new knowledge internally and builds the firm's *absorptive capacity*, that is, its ability to recognise, assimilate, and commercially exploit knowledge generated elsewhere. From an RBV perspective, sustained R&D commitment should therefore translate into long-run performance gains as the underlying knowledge stock accumulates and compounds.
+
+This long-run logic is well established. What complicates its empirical detection is the short run, and it is there that this note focuses.
+
+## H1: The Short-Run Expensing Effect
+
+Two channels jointly motivate the prediction that the contemporaneous association between R&D intensity and RoA is negative among European SMEs.
+
+The first channel is *accounting-mechanical*. Under IFRS, the vast majority of research expenditures must be expensed in the period they are incurred rather than capitalised as intangible assets. Income before extraordinary items — the numerator of RoA — is therefore reduced one-for-one by current-period R&D, even when the underlying investment is unambiguously value-creating. The benefits of that investment, in contrast, accrue only after a development and commercialisation cycle conventionally estimated at two to five years. In a static, contemporaneous specification, the cost side of R&D is fully loaded into the dependent variable while the return side is largely absent. The expensing effect should therefore dominate, mechanically generating a negative coefficient on R&D intensity even when the economic effect of R&D is positive.
+
+The second channel is *SME-specific*. Large multinationals can cross-subsidise R&D-heavy divisions from profitable ones, smooth earnings across business units, and finance research internally without visibly degrading reported performance. SMEs typically lack this insulation. The literature on innovation in smaller firms documents that the marginal earnings impact of R&D in SMEs is materially larger than in their large-firm counterparts and is conditional on absorptive capacity, which is itself unevenly distributed across SMEs [@booltinkEffectsRDIntensity2018; @tangRDInternationalizationProduct2019]. The two channels converge on a clear prediction.
+
+> **H1:** R&D intensity is negatively associated with current-period RoA among European SMEs.
+> *(Test: β(rd_intensity) < 0 and statistically significant)*
+
+## H2: Firm Size as a Moderator
+
+The short-run expensing drag is unlikely to fall uniformly across SMEs of different sizes. Two channels predict that the negative R&D–RoA relationship should be attenuated among larger SMEs.
+
+The first is a *scale channel*. Larger SMEs possess broader asset and revenue bases over which the costs of R&D — laboratory infrastructure, specialist personnel, regulatory compliance, downstream commercialisation — can be amortised. The same euro of R&D expenditure therefore translates into a smaller proportional drag on RoA. This channel is straightforward and operates entirely through the denominator structure of the R&D-intensity ratio and the RoA ratio.
+
+The second is an *absorptive capacity channel*. @cohenAbsorptiveCapacityNew1990 argue that the ability of a firm to convert R&D inputs into commercialisable outputs is itself a function of prior cumulative investment in knowledge-generating activities and the breadth of its human capital base. Larger SMEs typically possess deeper functional specialisation, broader managerial capacity, and stronger downstream functions in marketing and distribution. They are therefore better positioned to shorten the lag between R&D expenditure and revenue realisation, partially offsetting the short-run expensing drag through faster commercialisation. @kafourosRoleInternationalizationExplaining2008 document precisely this kind of size-conditional return to innovation in a related setting. Both channels yield the same directional prediction.
+
+> **H2:** Firm size positively moderates the R&D intensity–RoA relationship, attenuating the negative effect.
+> *(Test: β(rd_x_size) > 0)*
+
+# Data and Method
+
+## Sample
+
+The empirical analysis draws on annual firm-level data from the WRDS Compustat Global Daily database (table `comp_global_daily.g_funda`), covering fiscal years 2015 through 2024. The raw pull comprises all standard consolidated annual observations (`indfmt = "INDL"`, `datafmt = "HIST_STD"`, `consol = "C"`, `popsrc = "I"`) across geographies, totalling 338,465 firm-years globally. To construct a coherent European sample with comparable monetary units, we restrict to firms reporting in euros, which yields 26,090 firm-years from 3,430 unique firms across 46 European countries.
+
+We then apply a sequence of filters that progressively narrow the sample to the population of theoretical interest. Data-quality screens remove firm-years with non-positive total assets (`at <= 0.1`), non-positive sales (`sale <= 0`), or non-positive stockholders' equity (`seq <= 0`) — observations that almost always reflect data entry errors or economically degenerate states. Micro-firms with total assets below €1 million are excluded because the logarithmic firm-size transformation that enters our moderator is not well-behaved for very small firms and would introduce large negative values that distort estimation. The EU definition of an SME is then applied: a firm-year is retained if either employees fall below 250 (`emp < 0.25` in Compustat's thousand-employee units) or total assets do not exceed €43 million. Finally, firms with fewer than three usable observations are dropped to permit meaningful within-firm identification under fixed effects. The resulting unbalanced panel comprises `{python} f"{n_obs:,}"` firm-years from `{python} f"{n_firms:,}"` unique European SMEs. Of these, `{python} f"{n_rd:,}"` firm-years (`{python} f"{pct_rd}"`%) report positive R&D expenditure — consistent with the well-documented concentration of formal R&D activity among a minority of European SMEs.
+
+## Variables
+
+**Dependent variable.** Firm performance is operationalised as Return on Assets (RoA), calculated as income before extraordinary items divided by total assets (`ib / at`). RoA is the standard accounting-based performance measure in the SME and innovation literatures because it is scale-invariant, comparable across firms and years, and not contaminated by capital structure choices [@booltinkEffectsRDIntensity2018].
+
+**Independent variable.** R&D intensity is computed as R&D expenditure divided by total assets (`xrd / at`). Following established practice with Compustat-based samples, firm-years with missing `xrd` are assigned a value of zero on the assumption that firms which do not separately disclose R&D do not engage in material formal R&D activity. This convention introduces measurement error that biases the estimated R&D coefficient toward zero, making any negative finding a *lower bound* on the true short-run expensing effect.
+
+**Moderator.** Firm size is measured as the natural logarithm of total assets (`log(at)`). The logarithmic transformation addresses the right-skewed distribution of firm size that characterises listed SME samples and is consistent with established practice in the empirical innovation literature. Firm size enters both as a control variable and as the moderator in the H2 interaction term.
+
+**Controls.** We include three time-varying controls that prior research identifies as joint correlates of R&D investment and firm performance. *Leverage* (`dltt / at`) captures capital structure constraints that affect both the cost of R&D financing and profitability via interest obligations. *CAPX intensity* (`capx / at`) controls for the possibility that firms substitute between tangible and intangible investment and that physical investment independently shapes RoA. *Cash ratio* (`che / at`) proxies for liquidity and financial slack, which conditions both the capacity to fund discretionary R&D and the firm's ability to respond to growth opportunities.
+
+All continuous variables except `ln_at` are winsorised at the 1st and 99th percentiles to limit the influence of outliers without reducing sample size. The logarithmic firm-size measure is not winsorised because the log transformation already bounds its tails. Table 1 summarises the variable definitions.
+
+| Role | Variable | Field(s) | Formula |
+|---|---|---|---|
+| Dependent (Y) | RoA | `ib`, `at` | `ib / at` |
+| Independent (X) | R&D intensity | `xrd`, `at` | `xrd.fillna(0) / at` |
+| Moderator | Firm size | `at` | `log(at)` |
+| Interaction | R&D × Size | — | `rd_intensity × ln_at` |
+| Control | Leverage | `dltt`, `at` | `dltt / at` |
+| Control | CAPX intensity | `capx`, `at` | `capx / at` |
+| Control | Cash ratio | `che`, `at` | `che / at` |
+
+## Estimation Strategy
+
+The decision to invest in R&D is plausibly endogenous to firm-level characteristics — strategic orientation, management quality, sectoral positioning, country regulatory environment — that are themselves correlated with firm performance but are largely time-invariant over a ten-year window. A pooled OLS estimator that ignores this heterogeneity will misattribute the effect of these unobservables to the R&D coefficient itself, generating biased estimates whose direction depends on the sign of the underlying correlation. The empirical strategy is therefore organised around eliminating this source of bias.
+
+The baseline specification is the two-way fixed effects (TWFE) panel model
+
+$$
+\text{RoA}_{it} = \beta_1\,\text{RDintensity}_{it} + \beta_2\,\text{RDxSize}_{it} + \gamma'\,X_{it} + \mu_i + \lambda_t + \varepsilon_{it},
+$$
+
+where $\mu_i$ denotes firm fixed effects, $\lambda_t$ denotes year fixed effects, $X_{it}$ collects the four time-varying controls, and $\varepsilon_{it}$ is the idiosyncratic error term. Firm fixed effects absorb the full vector of time-invariant firm-level characteristics, allowing identification of $\beta_1$ from within-firm variation in R&D intensity over time. Year fixed effects absorb common macroeconomic shocks affecting all firms in a given year, such as the 2020 COVID-19 contraction or sector-wide regulatory shifts. Standard errors are clustered at the firm level throughout to allow for arbitrary within-firm correlation in the error process [@petersenEstimatingStandardErrors2009].
+
+The TWFE estimates are benchmarked against pooled OLS specifications to quantify the size of the omitted variable bias directly, and against random effects to motivate the fixed effects choice via a Hausman-style comparison of $\beta_1$ across the two estimators [@hausmanSpecificationTestsEconometrics1978]. All estimation is performed in Python using `statsmodels` and `linearmodels`.
+
+# Results
+
+## Descriptive Statistics
+
+```{python}
+#| label: tbl-summary
+#| tbl-cap: "Descriptive statistics for the analysis sample. Continuous variables (except log assets) winsorised at the 1st and 99th percentiles."
+summary
+```
+
+Table 1 presents descriptive statistics for the analysis sample. The distribution of RoA exhibits the left-skew that is characteristic of listed SME panels: the median firm-year is marginally profitable, while the mean is pulled below the median by a meaningful subset of loss-making firm-years. The R&D intensity distribution is sharply right-skewed, with both the median and the lower quartile equal to zero — a direct consequence of the fact that the majority of European SMEs in the sample do not separately disclose R&D expenditure. Firm size, after the micro-firm filter, is well-behaved and approximately symmetric on the log scale.
+
+![Pairwise correlation matrix of research variables. No variable pair exceeds a correlation of |0.35|, indicating that multicollinearity is unlikely to drive the regression estimates.](output/figures/correlation_matrix.png){width=70%}
+
+The correlation matrix in Figure 1 reveals a moderate negative bivariate correlation between R&D intensity and RoA, providing preliminary descriptive support for H1. The correlation between R&D intensity and firm size is near zero, which is reassuring for the interaction specification: the H2 test does not rest on raw collinearity between $X$ and the moderator. No pair of independent variables exceeds an absolute correlation of 0.35, confirming the absence of severe multicollinearity.
+
+## Regression Results
+
+```{python}
+#| label: tbl-regression
+#| tbl-cap: "Panel regression of RoA on R&D intensity. (1) Pooled OLS with heteroskedasticity-robust standard errors. (2) Two-way fixed effects with firm-clustered standard errors. (3) TWFE with R&D × Size interaction. Significance: * p<0.10, ** p<0.05, *** p<0.01."
+results[['(1) OLS','(2) TWFE','(3) TWFE+H2']]
+```
+
+Table 2 presents three specifications. Column (1) reports the pooled OLS benchmark with heteroskedasticity-robust standard errors. Column (2) reports the preferred two-way fixed effects specification with firm-clustered standard errors. Column (3) adds the R&D intensity × log assets interaction term that operationalises H2.
+
+**H1 — the main effect.** R&D intensity carries a strongly negative and statistically significant coefficient across all three specifications. In the TWFE benchmark (column 2), the coefficient is **β = `{python} f"{b_rd_fe:.4f}"`** (p < 0.01), implying that, within a given firm, a one-unit increase in R&D intensity is associated with a reduction in RoA of approximately `{python} f"{abs(b_rd_fe)*100:.1f}"` percentage points in the same fiscal year, holding all other covariates fixed. **H1 is supported.** The result is consistent with the theoretical mechanism advanced in Section 2.2: the expensing of R&D under IFRS creates a contemporaneous drag on accounting profitability that precedes the multi-year economic payoff of innovation investment.
+
+The comparison between OLS and TWFE is itself informative. The OLS coefficient (**β = `{python} f"{b_rd_ols:.4f}"`**) exceeds the TWFE coefficient in absolute magnitude by `{python} f"{ols_fe_diff}"`%, consistent with substantial omitted variable bias in the cross-sectional benchmark. The direction of the bias is theoretically expected: firms with unobservably stronger innovation cultures, better governance, or more favourable sectoral exposure simultaneously invest more in R&D *and* achieve higher RoA, producing a spurious negative association in the pooled cross-section that the fixed effects estimator removes. The Hausman-style comparison against random effects supports the same conclusion: the divergence between the FE and RE estimates of $\beta_1$ is non-trivial, indicating that the random effects exogeneity assumption is violated and that within-firm variation is the appropriate source of identification [@hausmanSpecificationTestsEconometrics1978].
+
+**H2 — the moderation effect.** The interaction term in column (3) carries a positive coefficient (**β = `{python} f"{b_rdsize:.4f}"`**), consistent with the direction predicted by H2: larger SMEs do appear to experience a smaller R&D-induced earnings drag than smaller SMEs. However, the coefficient does not reach conventional levels of statistical significance (p = `{python} f"{p_rdsize:.3f}"`), and **H2 is therefore not supported** in a strict statistical sense.
+
+![R&D intensity and RoA. *Left:* binned mean of RoA against R&D intensity for the subsample with positive R&D; the red bin-mean line documents the negative bivariate relationship. *Right:* median RoA across the firm-size distribution, separately for firms with and without R&D expenditure.](output/figures/main_relationship.png){width=95%}
+
+Figure 2 visualises both findings. The left panel makes the H1 mechanism descriptively visible: among R&D-active SMEs, the bin-mean line declines monotonically across the R&D intensity distribution. The right panel previews the H2 pattern that the regression cannot statistically confirm: at the lower end of the size distribution, R&D-active firms report markedly lower median RoA than firms without R&D, but the two trajectories converge — and at the upper end of the SME size distribution, partly cross — as firm size rises. The pattern is directionally consistent with H2 but, as the regression confirms, not precisely estimated.
+
+**Controls.** The control variables behave as expected. Firm size enters positively and significantly across all three specifications: within a given firm, years in which the asset base grows are associated with higher RoA. Leverage is strongly negatively associated with RoA, consistent with the interest-burden interpretation. The cash ratio exhibits the most diagnostically interesting pattern: its coefficient flips sign between OLS (negative and significant) and TWFE (positive and significant). This sign flip is a textbook signal that cross-sectional variation in cash holdings is contaminated by time-invariant firm-level heterogeneity — perhaps reflecting that low-margin sectors structurally hold less cash — that the fixed effects estimator removes.
+
+# Discussion
+
+The central finding of this note — that R&D intensity exerts a robust negative effect on current-period RoA among European SMEs — should not be read as evidence that innovation destroys value. The result reflects a temporal mismatch built into IFRS accounting conventions rather than a verdict on the economic logic of innovation. Within the framework of @barneyFirmResourcesSustained1991, R&D continues to build valuable, firm-specific, inimitable resources whose returns simply do not enter contemporaneous RoA. What the regression cleanly identifies is the *cost* side of R&D, not the *return* side. The within-firm framework, by design, holds constant the slower-moving determinants of value — innovation culture, governance, technological positioning — whose returns to R&D accrue over the multi-year cycles documented in the long-run literature on innovation and productivity [@cohenAbsorptiveCapacityNew1990].
+
+The `{python} f"{ols_fe_diff}"`% gap between the OLS and TWFE estimates of $\beta_1$ is a quantitatively meaningful illustration of the omitted variable problem that motivates panel fixed effects in the first place [@hausmanSpecificationTestsEconometrics1978; @petersenEstimatingStandardErrors2009]. A reader who saw only the OLS column would conclude that the short-run earnings penalty of R&D is roughly 80 cents on the euro of intensity; the FE column corrects this to roughly 55 cents. The empirical strategy is not a stylistic choice but a quantitatively decisive one.
+
+The non-significance of the size interaction warrants careful interpretation. The descriptive pattern in the right panel of Figure 2 is genuinely suggestive of size-conditional R&D effects: small R&D-active SMEs visibly underperform their non-R&D peers, while at higher size deciles the gap closes and even reverses. Yet the SME filter compresses the size distribution at exactly the point where H2 would be sharpest. Most firms in the sample sit between €1m and €43m in assets — a relatively narrow band on the log scale — limiting the variation needed to identify the interaction precisely. The finding is therefore best read as a *boundary condition* on H2 rather than its rejection: within the SME population, firm size is not a sharp moderator of the short-run R&D drag, but the pattern is consistent with what would be predicted from absorptive capacity theory and could likely be detected in samples with broader size variation.
+
+These findings carry a practical implication for SMEs and for the institutions that evaluate them. If lenders, investors, and boards rely heavily on contemporaneous accounting metrics to assess SME performance, the IFRS expensing of R&D introduces a systematic short-run penalty that may, at the margin, deter R&D commitment among precisely those firms — listed European SMEs — for which innovation is the principal vehicle of competitive renewal. The result speaks to the rationale behind R&D tax credits and other policy instruments designed to offset the contemporaneous accounting cost of innovation.
+
+# Conclusion
+
+This note examined whether R&D intensity reduces the current-period RoA of European SMEs, and whether firm size moderates this short-run effect. Using `{python} f"{n_obs:,}"` firm-years from `{python} f"{n_firms:,}"` European EUR-reporting SMEs over 2015–2024, the within-firm estimates show that R&D intensity is robustly and significantly negatively associated with current-period RoA (**β = `{python} f"{b_rd_fe:.4f}"`**, p < 0.01) and that this effect is `{python} f"{ols_fe_diff}"`% smaller in magnitude than the pooled OLS benchmark would suggest. The pattern is most parsimoniously interpreted as the IFRS expensing of R&D loading the cost side of innovation into contemporaneous RoA while the return side accrues with a multi-year lag. Firm size does not statistically moderate this effect within the SME sample, although the direction of the interaction is consistent with H2 and the descriptive evidence suggests a moderating role that more variable samples could plausibly identify.
+
+Three limitations bound the interpretation. First, the convention of assigning zero R&D intensity to non-disclosing firms introduces measurement error that biases the R&D coefficient toward zero, implying that the estimated effect is a lower bound on the true mechanical drag. Second, the ten-year observation window is unlikely to span the full payoff cycle of R&D investment; a specification with R&D intensity lagged by two to three years would offer a more balanced view of the intertemporal innovation–performance profile and is the natural next step. Third, Compustat Global coverage skews toward listed firms and therefore toward larger, more transparent SMEs, leaving the population of small, privately held SMEs — for whom the R&D financing constraint is likely sharpest — outside the sample. Extending the panel into private-firm databases or exploiting quasi-experimental variation from changes in R&D tax incentive regimes would address both the lag and the coverage concerns simultaneously and is the most promising avenue for further work.
+
+\newpage
+
+# References
+
+::: {#refs}
+:::
